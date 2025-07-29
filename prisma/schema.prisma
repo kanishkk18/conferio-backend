@@ -1,0 +1,163 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @default(cuid())
+  name     String
+  username String @unique
+  email    String @unique
+  password String
+  imageUrl String?
+
+  events       Event[]
+  integrations Integration[]
+  availability Availability?
+  meetings     Meeting[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Event {
+  id          String              @id @default(cuid())
+  title       String
+  description String?
+  duration    Int                 @default(30)
+  slug        String
+  isPrivate   Boolean             @default(false)
+  locationType EventLocationType
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  meetings Meeting[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("events")
+}
+
+model Integration {
+  id           String                    @id @default(cuid())
+  provider     IntegrationProvider
+  category     IntegrationCategory
+  appType      IntegrationAppType        @map("app_type")
+  accessToken  String                    @map("access_token")
+  refreshToken String?                   @map("refresh_token")
+  expiryDate   BigInt?                   @map("expiry_date")
+  metadata     Json
+  isConnected  Boolean                   @default(true)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("integrations")
+}
+
+model Availability {
+  id      String @id @default(cuid())
+  timeGap Int    @default(30)
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  days DayAvailability[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("availability")
+}
+
+model DayAvailability {
+  id          String      @id @default(cuid())
+  day         DayOfWeek
+  startTime   DateTime
+  endTime     DateTime
+  isAvailable Boolean     @default(true)
+
+  availabilityId String
+  availability   Availability @relation(fields: [availabilityId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("day_availability")
+}
+
+model Meeting {
+  id             String        @id @default(cuid())
+  guestName      String
+  guestEmail     String
+  additionalInfo String?
+  startTime      DateTime
+  endTime        DateTime
+  meetLink       String
+  calendarEventId String
+  calendarAppType String
+  status         MeetingStatus @default(SCHEDULED)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("meetings")
+}
+
+enum EventLocationType {
+  GOOGLE_MEET_AND_CALENDAR
+  ZOOM_MEETING
+}
+
+enum IntegrationProvider {
+  GOOGLE
+  ZOOM
+  MICROSOFT
+}
+
+enum IntegrationAppType {
+  GOOGLE_MEET_AND_CALENDAR
+  ZOOM_MEETING
+  OUTLOOK_CALENDAR
+}
+
+enum IntegrationCategory {
+  CALENDAR_AND_VIDEO_CONFERENCING
+  VIDEO_CONFERENCING
+  CALENDAR
+}
+
+enum DayOfWeek {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  CANCELLED
+}
