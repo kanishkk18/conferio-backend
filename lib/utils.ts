@@ -1,5 +1,11 @@
 import { v4 as uuidv4 } from 'uuid'
 import { decode, encode } from 'js-base64'
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 export function slugify(text: string): string {
   const uuid = uuidv4().replace(/\s+/g, "").slice(0, 4)
